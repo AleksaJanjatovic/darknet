@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#define ERROR_MESSAGE_LENGTH 500
 
 #ifdef GPU
     #define BLOCK 512
@@ -23,6 +24,8 @@ extern "C" {
 
 #define SECRET_NUM -1234
 extern int gpu_index;
+extern char darknet_error_message[ERROR_MESSAGE_LENGTH];
+extern int darknet_error_number;
 
 typedef struct{
     int classes;
@@ -681,9 +684,9 @@ int option_find_int_quiet(list *l, char *key, int def);
 
 network *parse_network_cfg(char *filename);
 void save_weights(network *net, char *filename);
-void load_weights(network *net, char *filename);
+void* load_weights(network *net, char *filename);
 void save_weights_upto(network *net, char *filename, int cutoff);
-void load_weights_upto(network *net, char *filename, int start, int cutoff);
+void* load_weights_upto(network *net, char *filename, int start, int cutoff);
 
 void zero_objectness(layer l);
 void get_region_detections(layer l, int w, int h, int netw, int neth, float thresh, int *map, float tree_thresh, int relative, detection *dets);

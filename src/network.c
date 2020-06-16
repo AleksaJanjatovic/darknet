@@ -53,8 +53,13 @@ load_args get_base_args(network *net)
 network *load_network(char *cfg, char *weights, int clear)
 {
     network *net = parse_network_cfg(cfg);
+    if(!net) {
+        return NULL;
+    }
     if(weights && weights[0] != 0){
-        load_weights(net, weights);
+        if(!load_weights(net, weights)) {
+            return NULL;
+        }
     }
     if(clear) (*net->seen) = 0;
     return net;
@@ -177,8 +182,18 @@ char *get_layer_string(LAYER_TYPE a)
 network *make_network(int n)
 {
     network *net = calloc(1, sizeof(network));
+    if(!net) {
+        darknet_error_number = 3006;
+        strcpy(darknet_error_message, "Darknet error: network allocation failed.");
+        return NULL;
+    }
     net->n = n;
     net->layers = calloc(net->n, sizeof(layer));
+    if(!net->layers) {
+        darknet_error_number = 3007;
+        strcpy(darknet_error_message, "Darknet error: network layers allocation failed.");
+        return NULL;
+    }
     net->seen = calloc(1, sizeof(size_t));
     net->t    = calloc(1, sizeof(int));
     net->cost = calloc(1, sizeof(float));
@@ -530,6 +545,11 @@ detection *make_network_boxes(network *net, float thresh, int *num)
     int nboxes = num_detections(net, thresh);
     if(num) *num = nboxes;
     detection *dets = calloc(nboxes, sizeof(detection));
+    if(!dets) {
+        darknet_error_number = 3004;
+        strcpy(darknet_error_message, "Darknet error: failed to allocate detections.");
+        return NULL;
+    }
     for(i = 0; i < nboxes; ++i){
         dets[i].prob = calloc(l.classes, sizeof(float));
         if(l.coords > 4){
@@ -562,6 +582,9 @@ void fill_network_boxes(network *net, int w, int h, float thresh, float hier, in
 detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num)
 {
     detection *dets = make_network_boxes(net, thresh, num);
+    if(!dets) {
+        return NULL;
+    }
     fill_network_boxes(net, w, h, thresh, hier, map, relative, dets);
     return dets;
 }

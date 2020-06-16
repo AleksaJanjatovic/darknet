@@ -1198,8 +1198,18 @@ void saturate_exposure_image(image im, float sat, float exposure)
 
 image resize_image(image im, int w, int h)
 {
-    image resized = make_image(w, h, im.c);   
+    image resized = make_image(w, h, im.c);
+    if(!resized.data) {
+        darknet_error_number = 3001;
+        strcpy(darknet_error_message, "Darknet error: image for resizing not allocated.");
+        return resized;
+    }
     image part = make_image(w, im.h, im.c);
+    if(!part.data) {
+        darknet_error_number = 3002;
+        strcpy(darknet_error_message, "Darknet error: image part for resizing not allocated.");
+        return part;
+    }
     int r, c, k;
     float w_scale = (float)(im.w - 1) / (w - 1);
     float h_scale = (float)(im.h - 1) / (h - 1);

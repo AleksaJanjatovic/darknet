@@ -742,9 +742,14 @@ int is_network(section *s)
 network *parse_network_cfg(char *filename)
 {
     list *sections = read_cfg(filename);
+    if (!sections)
+        return NULL;
     node *n = sections->front;
     if(!n) error("Config file has no sections");
     network *net = make_network(sections->size - 1);
+    if(!net) {
+        return net;
+    }
     net->gpu_index = gpu_index;
     size_params params;
 
@@ -891,7 +896,12 @@ network *parse_network_cfg(char *filename)
 list *read_cfg(char *filename)
 {
     FILE *file = fopen(filename, "r");
-    if(file == 0) file_error(filename);
+    if(file == 0) {
+        darknet_error_number = 3005;
+        strcpy(darknet_error_message, "Darknet error: cfg file not found: ");
+        strcat(darknet_error_message, (const char*)filename);
+        return NULL;
+    }
     char *line;
     int nu = 0;
     list *options = make_list();
@@ -1215,17 +1225,21 @@ void load_convolutional_weights(layer l, FILE *fp)
 }
 
 
-void load_weights_upto(network *net, char *filename, int start, int cutoff)
+void* load_weights_upto(network *net, char *filename, int start, int cutoff)
 {
 #ifdef GPU
     if(net->gpu_index >= 0){
         cuda_set_device(net->gpu_index);
     }
 #endif
-    fprintf(stderr, "Loading weights from %s...", filename);
+    fprintf(stderr, "Loading weights from %s...\n", filename);
     fflush(stdout);
     FILE *fp = fopen(filename, "rb");
-    if(!fp) file_error(filename);
+    if(!fp) {
+        strcpy(darknet_error_message, "Darknet error: weights file not found: ");
+        strcat(darknet_error_message, (const char*)filename);
+        return NULL;
+    }
 
     int major;
     int minor;
@@ -1303,10 +1317,12 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     }
     fprintf(stderr, "Done!\n");
     fclose(fp);
+    int* retVal = &darknet_error_number;
+    return retVal;
 }
 
-void load_weights(network *net, char *filename)
+void* load_weights(network *net, char *filename)
 {
-    load_weights_upto(net, filename, 0, net->n);
+    return load_weights_upto(net, filename, 0, net->n);
 }
 
