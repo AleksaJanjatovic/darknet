@@ -526,15 +526,20 @@ int num_detections(network *net, float thresh)
 {
     int i;
     int s = 0;
+    printf("Number of layers net->n: %x\n", net->n);
     for(i = 0; i < net->n; ++i){
         layer l = net->layers[i];
         if(l.type == YOLO){
             s += yolo_num_detections(l, thresh);
+            printf("l.type == YOLO S: %x\n", s);
         }
         if(l.type == DETECTION || l.type == REGION){
+            printf("Base: %x\n", s);
             s += l.w*l.h*l.n;
+            printf("Added: %x\n", s);
         }
     }
+    printf("S: %x\n", s);
     return s;
 }
 
@@ -544,7 +549,9 @@ detection *make_network_boxes(network *net, float thresh, int *num)
     int i;
     int nboxes = num_detections(net, thresh);
     if(num) *num = nboxes;
+    printf("Nboxes: %x\n", nboxes);
     detection *dets = calloc(nboxes, sizeof(detection));
+    printf("Dets allocation: %x\n", dets);
     if(!dets) {
         darknet_error_number = 3004;
         strcpy(darknet_error_message, "Darknet error: failed to allocate detections.");
@@ -552,6 +559,8 @@ detection *make_network_boxes(network *net, float thresh, int *num)
     }
     for(i = 0; i < nboxes; ++i){
         dets[i].prob = calloc(l.classes, sizeof(float));
+        printf("Dets[i].prob: %x\n", dets[i].prob);
+
         if(l.coords > 4){
             dets[i].mask = calloc(l.coords-4, sizeof(float));
         }
